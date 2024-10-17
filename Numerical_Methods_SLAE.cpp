@@ -26,34 +26,36 @@ void init() { // Задаю параметры для вывода
     std::cout << std::setprecision(3) << std::fixed;
 }
 
-std::vector<std::vector<int>> initA() { // Задаю данный нам массив А
-    std::vector<std::vector<int>> a(3, std::vector<int>(3, 1));
-    a[0][0] = n+ 2;
+std::vector<std::vector<double>> initA() { // Задаю данный нам массив А
+    std::vector<std::vector<double>> a(3, std::vector<double>(3, 1));
+    a[0][0] = n + 2;
     a[1][1] = n + 4;
     a[2][2] = n + 6;
 
     return a;
 }
 
-std::vector<int> initB() { // Задаю данный нам массив В
+std::vector<double> initB() { // Задаю данный нам массив В
     return {n + 4, n + 6, n + 8};
 }
+
 template<typename T> // функция вывода
-void print(std::vector<std::vector<T>>& a, char c) {
+void print(const std::vector<std::vector<T>>& a, char c) {
     std::cout << c << ":\n";
-    for (auto i : a) {
+    for (const auto& i : a) {
         std::cout << "\t";
-        for (auto j : i) {
+        for (const auto& j : i) {
             std::cout << j << "\t";
         }
         std::cout << "\n"; 
     }
     std::cout << "\n";
 }
+
 template<typename T> // функция вывода
-void print(std::vector<T>& b, char c) {
+void print(const std::vector<T>& b, char c) {
     std::cout << c << ":\t";
-    for (auto i : b) {
+    for (const auto& i : b) {
         std::cout << i << "\t"; 
     }
     std::cout << "\n\n"; 
@@ -68,18 +70,18 @@ T calculateAccuracy(const std::vector<T>& old_X, const std::vector<T>& new_X) {
     return max_diff;
 }
 
-std::vector<double> zeidelMethod(std::vector<std::vector<int>>& a, std::vector<int>& b) {
+std::vector<double> zeidelMethod(const std::vector<std::vector<double>>& a, const std::vector<double>& b) {
     std::vector<std::vector<double>> c(3, std::vector<double>(3));
 
     for (int i = 0; i < 3; ++i) {
         for (int j = 0; j < 3; ++j) {
             if (i == j) c[i][j] = 0;
-            else c[i][j] = double(-a[i][j]) / double (a[i][i]);
+            else c[i][j] = -a[i][j] / (a[i][i]);
         }
     }
     std::vector<double> d(3);
     for (int i = 0; i < 3; ++i) {
-        d[i] = double(b[i]) / double(a[i][i]);
+        d[i] = b[i] / a[i][i];
     }
     
     std::vector<double> old_X = {1, 1, 1}; // так как x^0 = 1
@@ -102,13 +104,68 @@ std::vector<double> zeidelMethod(std::vector<std::vector<int>>& a, std::vector<i
     }
     //std::cout << "itterations :" << k << "\n";
     return new_X;
+}
 
+std::vector<double> gaussMethod(std::vector<std::vector<double>> a, std::vector<double> b) {
+    int size = a.size();
+
+    // Прямой ход метода Гаусса (приведение к треугольному виду)
+    for (int i = 0; i < size; ++i) {
+        // Находим строку с максимальным элементом в столбце
+        int maxRow = i;
+        for (int k = i + 1; k < size; ++k) {
+            if (fabs(a[k][i]) > fabs(a[maxRow][i])) {
+                maxRow = k;
+            }
+        }
+
+        // Меняем строки местами
+        std::swap(a[i], a[maxRow]);
+        std::swap(b[i], b[maxRow]);
+
+        // Если главный элемент очень мал (почти 0), система, вероятно, несовместна или имеет бесконечно много решений
+        if (fabs(a[i][i]) < eps) {
+            std::cout << "Система не имеет единственного решения.\n";
+            return {};
+        }
+
+        // Приводим главный элемент к 1 и зануляем элементы ниже главного
+        for (int k = i + 1; k < size; ++k) {
+            double coeff = a[k][i] / a[i][i];
+            for (int j = i; j < size; ++j) {
+                a[k][j] -= coeff * a[i][j];
+            }
+            b[k] -= coeff * b[i];
+        }
+    }
+
+    // Обратный ход метода Гаусса (метод обратной подстановки)
+    std::vector<double> x(size);
+    for (int i = size - 1; i >= 0; --i) {
+        x[i] = b[i] / a[i][i];
+        for (int j = i - 1; j >= 0; --j) {
+            b[j] -= a[j][i] * x[i];
+        }
+    }
+
+    return x;
 }
 
 int main() {
     init();
-    std::vector<std::vector<int>> A = initA();
-    std::vector<int> B = initB();
+    std::vector<std::vector<double>> A = initA();
+    std::vector<double> B = initB();
     std::vector<double> answer = zeidelMethod(A, B);
+    std::cout << "ЗЕЙДЕЛЬ\n";
     print<double>(answer, 'X'); // Пока что, реализован только Зейдель
+
+    // Создаем копию матрицы A и вектора B для метода Гаусса
+    std::vector<std::vector<double>> A_copy = A;
+    std::vector<double> B_copy = B;
+    std::vector<double> result = gaussMethod(A_copy, B_copy);
+
+    std::cout << "ГАУСС\n";
+    print<double>(result, 'X');
+    
+    return 0;
 }
