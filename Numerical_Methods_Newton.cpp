@@ -1,54 +1,31 @@
 #include <bits/stdc++.h>
 
-template<typename T> // Тут я бинарно возвожу число в степень (Асимптотика O(log(n)) вместо O(n) у встроенной функции std::pow())
-T binpow(T a, int n) {
-    if (n == 0) return 1.0;
-    if (n == 1) return a;
-    if (n < 0) {
-        a = 1 / a;
-        n = -n;
-    }
-    T res = 1.0;
-    while (n) {rf
-        if (n & 1) {
-            res *= a;
-        }
-        a *= a;
-        n >>= 1;
-    }
-    return res;
-}
+const double EPS = 1e-4;
 
-// Функция f(x) = x^3 - e^x + 1
 double f(double x) {
-    return binpow(x, 3) - std::exp(x) + 1;
+    return pow(x, 3) - exp(x) + 1;
 }
 
-// Производная функции f'(x) = 3x^2 - e^x
-double f_derevative(double x) {
-    return 3 * x * x - std::exp(x);
+double f_prime(double x) {
+    return 3 * pow(x, 2) - exp(x);
 }
 
-double newtonMethod() {
-    double x = 0.5; // Начальное приближение
-    double x_next = 0.0;
-    double eps = 1e-4; // Точность
+double newton_method(double x0) {
+    double x = x0;
+    double x_next;
 
     while (true) {
-        x_next = x - f(x) / f_derevative(x);
-        if (std::abs(x_next - x) < eps) {
+        x_next = x - f(x) / f_prime(x);
+        if (fabs(x_next - x) < EPSILON)
             break;
-        }
         x = x_next;
     }
-
     return x_next;
 }
 
 int main() {
-    double root = newtonMethod();
-    std::cout << std::setprecision(4) << std::fixed;
-    std::cout << "Минимальный по модулю ненулевой корнь: " << root << std::endl;
-
+    double x0 = -0.8;
+    double root = newton_method(x0);
+    std::cout << std::setprecision(5) << std::fixed << "Приближенное значение корня: " << root << std::endl;
     return 0;
 }
